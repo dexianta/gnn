@@ -45,4 +45,20 @@ func TestVal(t *testing.T) {
 		assert.Equal(t, c.grad, 36.) // 2(a * (b-c))*a*(-1) = 2 * (3 * -2)*2*-1 = 36
 		assert.Equal(t, d.grad, 1.)
 	})
+
+	t.Run("relu", func(t *testing.T) {
+		a := NewVal(3)
+		b := a.ReLu()
+		b.Backward(1)
+
+		assert.Equal(t, b.data, 3.)
+		assert.Equal(t, a.grad, 1.)
+
+		a = NewVal(-3)
+		b = a.ReLu()
+		b.Backward(1)
+
+		assert.Equal(t, b.data, 0.)
+		assert.Equal(t, a.grad, 0.)
+	})
 }

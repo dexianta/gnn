@@ -8,13 +8,13 @@ import (
 type Op string
 
 const (
-	Add Op = "+"
-	Sub Op = "-"
-	Mul Op = "*"
-	Div Op = "/"
-	Pow Op = "^"
-	Exp Op = "exp"
-	Neg Op = "-"
+	Add  Op = "+"
+	Sub  Op = "-"
+	Mul  Op = "*"
+	Div  Op = "/"
+	Pow  Op = "^"
+	Exp  Op = "exp"
+	ReLu Op = "relu"
 )
 
 type BinaryOp struct {
@@ -41,11 +41,19 @@ type NullOp struct{}
 
 var nu = &NullOp{} // for leaf node
 
+// Val is a representation of a blob of value
+// it can be just a simple number (leaf node) without prev:
+//
+//	Val{data: 3, prev: nu}
+//
+// or, it's produced by some previous operation by prev:
+//
+//	Val{data: 3, prev: BinaryOp{op: Add, l: v1, r: v2}}
 type Val struct {
 	data float64
 	grad float64
 
-	prev any // BinaryOp or UnaryOp
+	prev any // BinaryOp / UnaryOp / PowOp / ExpOp / NullOp (leaf node)
 }
 
 func NewVal(data float64) *Val {
@@ -84,36 +92,48 @@ func NewVal(data float64) *Val {
 // externalGrad is needed to kick-off the traverse
 func (v *Val) Backward(accumulatedGrad float64) {
 	v.grad = accumulatedGrad
-	switch o := v.prev.(type) {
+	switch pr := v.prev.(type) {
 	case *BinaryOp:
-		switch o.op {
+		switch pr.op {
 		case Add:
 			// for addition, x + y
 			// the way to calculate gradient is accumulated_grad * d(x + y)/dx = accumulated_grad
-			o.l.grad += v.grad // if the Val were used multiple times, we need to accumulate the gradient
-			o.r.grad += v.grad
-			o.l.Backward(o.l.grad)
-			o.r.Backward(o.r.grad)
+			pr.l.grad += v.grad // if the Val were used multiple times, we need to accumulate the gradient
+			pr.r.grad += v.grad
+			pr.l.Backward(pr.l.grad)
+			pr.r.Backward(pr.r.grad)
 		case Mul:
 			// for multiplication, x * y
 			// the way to calculate gradient is accumulated_grad * d(x*y)/dx = accumulated_grad * y
-			o.l.grad += o.r.data * v.grad
-			o.r.grad += o.l.data * v.grad
-			o.l.Backward(o.l.grad)
-			o.r.Backward(o.r.grad)
+			pr.l.grad += pr.r.data * v.grad
+			pr.r.grad += pr.l.data * v.grad
+			pr.l.Backward(pr.l.grad)
+			pr.r.Backward(pr.r.grad)
 		}
 	case *PowOp:
 		// x^n --> nx^n-1
-		o.v.grad += o.p * math.Pow(o.v.data, o.p-1) * v.grad
-		o.v.Backward(o.v.grad)
+		pr.v.grad += pr.p * math.Pow(pr.v.data, pr.p-1) * v.grad
+		pr.v.Backward(pr.v.grad)
 
 	case *ExpOp:
 		// e^x --> e^x
-		o.v.grad += math.Exp(o.v.data) * v.grad
-		o.v.Backward(o.v.grad)
+		pr.v.grad += math.Exp(pr.v.data) * v.grad
+		pr.v.Backward(pr.v.grad)
+	case *UnaryOp:
+		switch pr.op {
+		case ReLu:
+			if v.data > 0 {
+				pr.v.grad += v.grad
+			} else {
+				pr.v.grad += 0 // for readability
+			}
+			pr.v.Backward(pr.v.grad)
+		default:
+			panic(fmt.Errorf("invalid op for UnaryOp: %T", pr.op))
+		}
 	case *NullOp:
 	default:
-		panic(fmt.Errorf("invalid op for prev: %T", o))
+		panic(fmt.Errorf("invalid op for prev: %T", pr))
 	}
 }
 
@@ -168,6 +188,21 @@ func (v *Val) Pow(p float64) *Val {
 	ret.prev = &PowOp{
 		v: v,
 		p: p,
+	}
+	return ret
+}
+
+func (v *Val) ReLu() *Val {
+	ret := &Val{
+		prev: &UnaryOp{
+			op: ReLu,
+			v:  v,
+		},
+	}
+	if v.data < 0 {
+		ret.data = 0
+	} else {
+		ret.data = v.data
 	}
 	return ret
 }
