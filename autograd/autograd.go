@@ -19,45 +19,45 @@ const (
 
 type BinaryOp struct {
 	op Op
-	l  *Val // left
-	r  *Val // right
+	l  *Var // left
+	r  *Var // right
 }
 
 type PowOp struct {
-	v *Val
+	v *Var
 	p float64
 }
 
 type ExpOp struct {
-	v *Val
+	v *Var
 }
 
 type UnaryOp struct {
 	op Op
-	v  *Val
+	v  *Var
 }
 
 type NullOp struct{}
 
 var nu = &NullOp{} // for leaf node
 
-// Val is a representation of a blob of value
+// Var is a variable, in a proper implementation, it should be a tensor
 // it can be just a simple number (leaf node) without prev:
 //
-//	Val{data: 3, prev: nu}
+//	Var{data: 3, prev: nu}
 //
 // or, it's produced by some previous operation by prev:
 //
-//	Val{data: 3, prev: BinaryOp{op: Add, l: v1, r: v2}}
-type Val struct {
+//	Var{data: 3, prev: BinaryOp{op: Add, l: v1, r: v2}}
+type Var struct {
 	data float64
 	grad float64
 
 	prev any // BinaryOp / UnaryOp / PowOp / ExpOp / NullOp (leaf node)
 }
 
-func NewVal(data float64) *Val {
-	return &Val{
+func NewVar(data float64) *Var {
+	return &Var{
 		data: data,
 		prev: nu,
 	}
@@ -90,7 +90,7 @@ func NewVal(data float64) *Val {
 // Backward will traverse the computation graph and populate the gradient of each node
 // the special case are for the root, which is just 1
 // externalGrad is needed to kick-off the traverse
-func (v *Val) Backward(accumulatedGrad float64) {
+func (v *Var) Backward(accumulatedGrad float64) {
 	v.grad = accumulatedGrad
 	switch pr := v.prev.(type) {
 	case *BinaryOp:
@@ -137,16 +137,16 @@ func (v *Val) Backward(accumulatedGrad float64) {
 	}
 }
 
-func (v *Val) Neg() *Val {
-	return v.Mul(NewVal(-1.))
+func (v *Var) Neg() *Var {
+	return v.Mul(NewVar(-1.))
 }
 
-func (v *Val) Sub(o *Val) *Val {
+func (v *Var) Sub(o *Var) *Var {
 	return v.Add(o.Neg())
 }
 
-func (v *Val) Add(o *Val) *Val {
-	ret := &Val{}
+func (v *Var) Add(o *Var) *Var {
+	ret := &Var{}
 	ret.data = v.data + o.data
 	ret.prev = &BinaryOp{
 		op: Add,
@@ -156,8 +156,8 @@ func (v *Val) Add(o *Val) *Val {
 	return ret
 }
 
-func (v *Val) Mul(o *Val) *Val {
-	ret := &Val{}
+func (v *Var) Mul(o *Var) *Var {
+	ret := &Var{}
 	ret.data = v.data * o.data
 	ret.prev = &BinaryOp{
 		op: Mul,
@@ -167,14 +167,14 @@ func (v *Val) Mul(o *Val) *Val {
 	return ret
 }
 
-func (v *Val) Div(o *Val) *Val {
+func (v *Var) Div(o *Var) *Var {
 	// a / b = a * (b ^ -1)
 	return v.Mul(o.Pow(-1.))
 }
 
 // base with nature e
-func (v *Val) Exp() *Val {
-	ret := &Val{}
+func (v *Var) Exp() *Var {
+	ret := &Var{}
 	ret.data = math.Exp(v.data)
 	ret.prev = &ExpOp{
 		v: v,
@@ -182,8 +182,8 @@ func (v *Val) Exp() *Val {
 	return ret
 }
 
-func (v *Val) Pow(p float64) *Val {
-	ret := &Val{}
+func (v *Var) Pow(p float64) *Var {
+	ret := &Var{}
 	ret.data = math.Pow(v.data, p)
 	ret.prev = &PowOp{
 		v: v,
@@ -192,8 +192,8 @@ func (v *Val) Pow(p float64) *Val {
 	return ret
 }
 
-func (v *Val) ReLu() *Val {
-	ret := &Val{
+func (v *Var) ReLu() *Var {
+	ret := &Var{
 		prev: &UnaryOp{
 			op: ReLu,
 			v:  v,

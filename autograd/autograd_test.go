@@ -8,22 +8,22 @@ import (
 
 func TestVal(t *testing.T) {
 	t.Run("", func(t *testing.T) {
-		a := NewVal(3)
+		a := NewVar(3)
 		d := a.Add(a)
 		d.Backward(1)
 		assert.Equal(t, a.grad, 2.0)
 	})
 
 	t.Run("", func(t *testing.T) {
-		a := NewVal(3)
+		a := NewVar(3)
 		b := a.Neg()
 		b.Backward(1)
 		assert.Equal(t, a.grad, -1.)
 	})
 
 	t.Run("", func(t *testing.T) {
-		a := NewVal(1)
-		b := NewVal(2)
+		a := NewVar(1)
+		b := NewVar(2)
 		d := a.Sub(b) // a - (b * -1)
 		d.Backward(1)
 		assert.Equal(t, a.grad, 1.0)
@@ -31,10 +31,10 @@ func TestVal(t *testing.T) {
 	})
 
 	t.Run("", func(t *testing.T) {
-		a := NewVal(3)
-		b := NewVal(5)
-		c := NewVal(7)
-		d := NewVal(9)
+		a := NewVar(3)
+		b := NewVar(5)
+		c := NewVar(7)
+		d := NewVar(9)
 		f := (a.Mul(b.Sub(c)).Pow(2)).Add(d) // (a * (b - c))^2 + d
 
 		f.Backward(1)
@@ -47,14 +47,14 @@ func TestVal(t *testing.T) {
 	})
 
 	t.Run("relu", func(t *testing.T) {
-		a := NewVal(3)
+		a := NewVar(3)
 		b := a.ReLu()
 		b.Backward(1)
 
 		assert.Equal(t, b.data, 3.)
 		assert.Equal(t, a.grad, 1.)
 
-		a = NewVal(-3)
+		a = NewVar(-3)
 		b = a.ReLu()
 		b.Backward(1)
 
