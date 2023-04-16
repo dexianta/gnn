@@ -1,4 +1,4 @@
-package autograd
+package common
 
 import (
 	"fmt"
@@ -63,6 +63,11 @@ func NewVar(data float64) *Var {
 	}
 }
 
+// Backward for external use, treating v as the start of back propagation
+func (v *Var) Backward() {
+	v.backward(1.)
+}
+
 // Back Propagation is the process to find out the gradient of local variable with regard to the final output of interest:
 // i.e. d<final result>/d<local variable>.
 // for an example: ((a * b) + d) * e = f
@@ -87,10 +92,11 @@ func NewVar(data float64) *Var {
 // this procedure seems tedious but has the advantage of being easy to implement as computer program, as opposite to
 // what we are taught in calculus class (solve it by hand by expanding the expression)
 
-// Backward will traverse the computation graph and populate the gradient of each node
+// backward will traverse the computation graph and populate the gradient of each node
 // the special case are for the root, which is just 1
 // externalGrad is needed to kick-off the traverse
-func (v *Var) Backward(accumulatedGrad float64) {
+// TODO: as golang does not seem to support tail call optimization, this will eventually stackoverflow.
+func (v *Var) backward(accumulatedGrad float64) {
 	v.grad = accumulatedGrad
 	switch pr := v.prev.(type) {
 	case *BinaryOp:
@@ -100,25 +106,25 @@ func (v *Var) Backward(accumulatedGrad float64) {
 			// the way to calculate gradient is accumulated_grad * d(x + y)/dx = accumulated_grad
 			pr.l.grad += v.grad // if the Val were used multiple times, we need to accumulate the gradient
 			pr.r.grad += v.grad
-			pr.l.Backward(pr.l.grad)
-			pr.r.Backward(pr.r.grad)
+			pr.l.backward(pr.l.grad)
+			pr.r.backward(pr.r.grad)
 		case Mul:
 			// for multiplication, x * y
 			// the way to calculate gradient is accumulated_grad * d(x*y)/dx = accumulated_grad * y
 			pr.l.grad += pr.r.data * v.grad
 			pr.r.grad += pr.l.data * v.grad
-			pr.l.Backward(pr.l.grad)
-			pr.r.Backward(pr.r.grad)
+			pr.l.backward(pr.l.grad)
+			pr.r.backward(pr.r.grad)
 		}
 	case *PowOp:
 		// x^n --> nx^n-1
 		pr.v.grad += pr.p * math.Pow(pr.v.data, pr.p-1) * v.grad
-		pr.v.Backward(pr.v.grad)
+		pr.v.backward(pr.v.grad)
 
 	case *ExpOp:
 		// e^x --> e^x
 		pr.v.grad += math.Exp(pr.v.data) * v.grad
-		pr.v.Backward(pr.v.grad)
+		pr.v.backward(pr.v.grad)
 	case *UnaryOp:
 		switch pr.op {
 		case ReLu:
@@ -127,7 +133,7 @@ func (v *Var) Backward(accumulatedGrad float64) {
 			} else {
 				pr.v.grad += 0 // for readability
 			}
-			pr.v.Backward(pr.v.grad)
+			pr.v.backward(pr.v.grad)
 		default:
 			panic(fmt.Errorf("invalid op for UnaryOp: %T", pr.op))
 		}
