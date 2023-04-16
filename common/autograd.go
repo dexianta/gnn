@@ -56,6 +56,10 @@ type Var struct {
 	prev any // BinaryOp / UnaryOp / PowOp / ExpOp / NullOp (leaf node)
 }
 
+func (v Var) String() string {
+	return fmt.Sprint(v.data)
+}
+
 func NewVar(data float64) *Var {
 	return &Var{
 		data: data,
