@@ -60,3 +60,40 @@ func TestParseDim(t *testing.T) {
 	_, err = parseShape(a5, []int{})
 	assert.Equal(t, err, ErrInvalidShape)
 }
+
+func TestIndexConversion(t *testing.T) {
+	shape := []int{3, 3, 3}
+	for i := 0; i < 27; i++ {
+		pos := toPos(i, shape)
+		idx := toIndex(pos, shape)
+		assert.Equal(t, idx, i)
+	}
+}
+
+func TestMatmulShape(t *testing.T) {
+	specs := []struct {
+		a        []int
+		b        []int
+		expected []int
+	}{
+		{
+			[]int{1, 2, 3},
+			[]int{1, 3, 2},
+			[]int{1, 2, 2},
+		},
+		{
+			[]int{10, 3, 4},
+			[]int{4, 1},
+			[]int{10, 3, 1},
+		},
+		{
+			[]int{10, 3, 4},
+			[]int{10, 4, 5},
+			[]int{10, 3, 5},
+		},
+	}
+
+	for _, spec := range specs {
+		assert.Equal(t, spec.expected, newShapeForMatMul(spec.a, spec.b))
+	}
+}

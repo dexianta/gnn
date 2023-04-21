@@ -19,56 +19,56 @@ const (
 
 type BinaryOp struct {
 	op Op
-	l  *Var // left
-	r  *Var // right
+	l  *V // left
+	r  *V // right
 }
 
 type PowOp struct {
-	v *Var
+	v *V
 	p float64
 }
 
 type ExpOp struct {
-	v *Var
+	v *V
 }
 
 type UnaryOp struct {
 	op Op
-	v  *Var
+	v  *V
 }
 
 type NullOp struct{}
 
 var nu = &NullOp{} // for leaf node
 
-// Var is a variable, in a proper implementation, it should be a tensor
+// V is a value, in a proper implementation, it should be a tensor
 // it can be just a simple number (leaf node) without prev:
 //
-//	Var{data: 3, prev: nu}
+//	V{data: 3, prev: nu}
 //
 // or, it's produced by some previous operation by prev:
 //
-//	Var{data: 3, prev: BinaryOp{op: Add, l: v1, r: v2}}
-type Var struct {
+//	V{data: 3, prev: BinaryOp{op: Add, l: v1, r: v2}}
+type V struct {
 	data float64
 	grad float64
 
 	prev any // BinaryOp / UnaryOp / PowOp / ExpOp / NullOp (leaf node)
 }
 
-func (v Var) String() string {
+func (v V) String() string {
 	return fmt.Sprint(v.data)
 }
 
-func NewVar(data float64) *Var {
-	return &Var{
+func NewVar(data float64) *V {
+	return &V{
 		data: data,
 		prev: nu,
 	}
 }
 
 // Backward for external use, treating v as the start of back propagation
-func (v *Var) Backward() {
+func (v *V) Backward() {
 	v.backward(1.)
 }
 
@@ -100,7 +100,7 @@ func (v *Var) Backward() {
 // the special case are for the root, which is just 1
 // externalGrad is needed to kick-off the traverse
 // TODO: as golang does not seem to support tail call optimization, this will eventually stackoverflow.
-func (v *Var) backward(accumulatedGrad float64) {
+func (v *V) backward(accumulatedGrad float64) {
 	v.grad = accumulatedGrad
 	switch pr := v.prev.(type) {
 	case *BinaryOp:
@@ -147,16 +147,16 @@ func (v *Var) backward(accumulatedGrad float64) {
 	}
 }
 
-func (v *Var) Neg() *Var {
+func (v *V) Neg() *V {
 	return v.Mul(NewVar(-1.))
 }
 
-func (v *Var) Sub(o *Var) *Var {
+func (v *V) Sub(o *V) *V {
 	return v.Add(o.Neg())
 }
 
-func (v *Var) Add(o *Var) *Var {
-	ret := &Var{}
+func (v *V) Add(o *V) *V {
+	ret := &V{}
 	ret.data = v.data + o.data
 	ret.prev = &BinaryOp{
 		op: Add,
@@ -166,8 +166,8 @@ func (v *Var) Add(o *Var) *Var {
 	return ret
 }
 
-func (v *Var) Mul(o *Var) *Var {
-	ret := &Var{}
+func (v *V) Mul(o *V) *V {
+	ret := &V{}
 	ret.data = v.data * o.data
 	ret.prev = &BinaryOp{
 		op: Mul,
@@ -177,14 +177,14 @@ func (v *Var) Mul(o *Var) *Var {
 	return ret
 }
 
-func (v *Var) Div(o *Var) *Var {
+func (v *V) Div(o *V) *V {
 	// a / b = a * (b ^ -1)
 	return v.Mul(o.Pow(-1.))
 }
 
 // base with nature e
-func (v *Var) Exp() *Var {
-	ret := &Var{}
+func (v *V) Exp() *V {
+	ret := &V{}
 	ret.data = math.Exp(v.data)
 	ret.prev = &ExpOp{
 		v: v,
@@ -192,8 +192,8 @@ func (v *Var) Exp() *Var {
 	return ret
 }
 
-func (v *Var) Pow(p float64) *Var {
-	ret := &Var{}
+func (v *V) Pow(p float64) *V {
+	ret := &V{}
 	ret.data = math.Pow(v.data, p)
 	ret.prev = &PowOp{
 		v: v,
@@ -202,8 +202,8 @@ func (v *Var) Pow(p float64) *Var {
 	return ret
 }
 
-func (v *Var) ReLu() *Var {
-	ret := &Var{
+func (v *V) ReLu() *V {
+	ret := &V{
 		prev: &UnaryOp{
 			op: ReLu,
 			v:  v,

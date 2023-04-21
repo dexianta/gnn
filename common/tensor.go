@@ -8,8 +8,8 @@ import (
 // Tensor is a n-dimensional array
 // implemented with a single dimensional array with indexing tricks
 type Tensor struct {
-	data  []*Var
-	shape []int
+	data  []*V
+	Shape Shape
 }
 
 func NewTensor[T ndb](arr T) (ret Tensor) {
@@ -18,22 +18,40 @@ func NewTensor[T ndb](arr T) (ret Tensor) {
 		panic(err)
 	}
 
-	ret.shape = shape
-	var data = make([]*Var, Product(shape))
+	ret.Shape = shape
+	var data = make([]*V, Product(shape))
 	buildNdArrayIntoSingleDim(arr, shape, data)
 	ret.data = data
 	return
 }
 
-func (t *Tensor) Loc(idx ...int) float64 {
-	return t.data[toIndex(idx, t.shape)].data
+func (t *Tensor) Loc(loc []int) float64 {
+	return t.data[toIndex(loc, t.Shape)].data
 }
 
 func (t Tensor) String() string {
-	return fmt.Sprintf("\n%s\n", buildString([]int{}, t.shape, t.data))
+	return fmt.Sprintf("\n%s\n", buildString([]int{}, t.Shape, t.data))
 }
 
-func buildString(pos, shape []int, data []*Var) string {
+// matrix multiplication
+func (t Tensor) Matmul(o Tensor) (ret Tensor) {
+	// dot product
+	if len(t.Shape) == 1 && len(o.Shape) == 1 && t.Shape[0] == o.Shape[0] {
+		var data = make([]*V, t.Shape[0])
+		for i := range t.data {
+			data[i] = t.data[i].Mul(o.data[i])
+		}
+		ret.data = data
+		ret.Shape = t.Shape
+		return
+	}
+
+	// normal matrix multiplication
+
+	panic("invalid operation")
+}
+
+func buildString(pos, shape []int, data []*V) string {
 	var tmp []string
 	if len(pos) == len(shape)-1 {
 		pos = append(pos, 0)

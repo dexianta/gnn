@@ -33,21 +33,39 @@ var (
 	ErrInvalidShape = errors.New("invalid shape")
 )
 
+// (2,2,2) shape
+// (0, 0, 0) -> 0
+// (0, 0, 1) -> 1
+// (0, 1, 0) -> 2
+// (0, 1, 1) -> 3
+// (1, 0, 0) -> 4
+// (1, 0, 1) -> 5
+func toPos(idx int, shape []int) []int {
+	result := make([]int, len(shape))
+	for i := len(shape) - 1; i >= 0; i-- {
+		result[i] = idx % shape[i]
+		idx = idx / shape[i]
+	}
+	return result
+}
+
 func toIndex(pos, shape []int) (ret int) {
 	if len(pos) != len(shape) {
 		panic("bad shape")
 	}
-	for i := range pos {
-		stride := 1
-		for j := i + 1; j < len(shape); j++ {
-			stride *= shape[j]
+	// starting from rightmost (LSB)
+
+	for i := len(pos) - 1; i >= 0; i-- {
+		if i == len(pos)-1 {
+			ret = pos[i]
+		} else {
+			ret += pos[i] * Product(shape[i+1:])
 		}
-		ret += pos[i] * stride
 	}
 	return
 }
 
-func buildNdArrayIntoSingleDim[T ndb](arr T, shape []int, data []*Var) {
+func buildNdArrayIntoSingleDim[T ndb](arr T, shape []int, data []*V) {
 	// dim should match with the shape of arr
 	switch v := any(arr).(type) {
 	case d1:
@@ -147,4 +165,15 @@ func parseShape[T ndb](arr T, dim []int) ([]int, error) {
 	default:
 		panic("invalid type")
 	}
+}
+
+func newShapeForMatMul(a, b []int) []int {
+	// the most common matrix usecase (for me)
+	// not taking care of broadcasting, I don't find it nature anyway
+	if len(a) >= len(b) && len(b) >= 2 && a[len(a)-1] == b[len(b)-2] {
+		a[len(a)-1] = b[len(b)-1]
+		return a
+	}
+
+	panic("invalid shape")
 }

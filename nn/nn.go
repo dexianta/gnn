@@ -13,14 +13,14 @@ import (
 // - etc
 type Neuron struct {
 	input int
-	ws    []*common.Var
-	b     *common.Var
+	ws    []*common.V
+	b     *common.V
 }
 
 func NewNeuron(ninput int) Neuron {
 	n := Neuron{
 		input: ninput,
-		ws:    make([]*common.Var, ninput),
+		ws:    make([]*common.V, ninput),
 		b:     common.NewVar(0.),
 	}
 
