@@ -35,11 +35,22 @@ func TestShapeIter(t *testing.T) {
 }
 
 func TestMatMul(t *testing.T) {
-	a := NewTensor(d2{{1, 2}, {3, 4}})
-	b := NewTensor(d2{{3, 4, 5}, {6, 7, 8}})
-	expected := NewTensor(d2{{15, 18, 21}, {33, 40, 47}})
+	t.Run("", func(t *testing.T) {
+		a := NewTensor(d2{{1, 2}, {3, 4}})
+		b := NewTensor(d2{{3, 4, 5}, {6, 7, 8}})
+		expected := NewTensor(d2{{15, 18, 21}, {33, 40, 47}})
 
-	c := a.Matmul(b)
-	assert.Equal(t, c.Shape, Shape{2, 3})
-	assert.True(t, c.Equal(expected))
+		c := a.Matmul(b)
+		assert.Equal(t, c.Shape, Shape{2, 3})
+		assert.True(t, c.Equal(expected))
+	})
+
+	t.Run("", func(t *testing.T) {
+		a := Ones(2, 3, 4)
+		b := Ones(2, 4, 5)
+
+		c := a.Matmul(b)
+		assert.Equal(t, c.Shape, Shape{2, 3, 5})
+		assert.True(t, c.Equal(Ones(2, 3, 5).Mul(4)))
+	})
 }

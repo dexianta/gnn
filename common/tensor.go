@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"math/rand"
 	"reflect"
 	"strings"
 )
@@ -83,6 +84,58 @@ func NewTensor[T ndb](arr T) (ret Tensor) {
 	var data = make([]*V, mul(shape))
 	buildNdArrayIntoSingleDim(arr, shape, data)
 	ret.data = data
+	return
+}
+
+func Ones(dims ...int) Tensor {
+	shape := Shape(dims)
+	t := Tensor{
+		data:  make([]*V, shape.Cap()),
+		Shape: shape,
+	}
+
+	for i := range t.data {
+		t.data[i] = &V{
+			data: 1,
+		}
+	}
+
+	return t
+}
+
+func Randn(dims ...int) Tensor {
+	shape := Shape(dims)
+	t := Tensor{
+		data:  make([]*V, shape.Cap()),
+		Shape: shape,
+	}
+
+	for i := range t.data {
+		t.data[i] = &V{
+			data: rand.NormFloat64(),
+		}
+	}
+
+	return t
+}
+
+func (t Tensor) Add(v float64) (ret Tensor) {
+	ret.Shape = t.Shape
+	ret.data = t.data
+
+	for i := range ret.data {
+		ret.data[i].data += v
+	}
+	return
+}
+
+func (t Tensor) Mul(v float64) (ret Tensor) {
+	ret.Shape = t.Shape
+	ret.data = t.data
+
+	for i := range ret.data {
+		ret.data[i].data *= v
+	}
 	return
 }
 
