@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTensor(t *testing.T) {
+func TestTensorInit(t *testing.T) {
 	tn := NewTensor(d3{{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}})
 
 	s := tn.Shape
@@ -19,5 +19,17 @@ func TestTensor(t *testing.T) {
 				v += 1
 			}
 		}
+	}
+}
+
+func TestShapeIter(t *testing.T) {
+	a := Shape{3, 4}
+
+	iter := a.Iter()
+	var idx int
+	for iter.Next() {
+		pos := iter.Step()
+		assert.Equal(t, toIndex(pos, a), idx)
+		idx++
 	}
 }

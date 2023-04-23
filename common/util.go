@@ -7,7 +7,7 @@ func nrange(n int) (ret []int) {
 	return
 }
 
-func Product[T ~int | ~float64](arr []T) (ret T) {
+func mul[T ~int | ~float64](arr []T) (ret T) {
 	ret = 1
 	for _, t := range arr {
 		ret *= t
@@ -15,9 +15,15 @@ func Product[T ~int | ~float64](arr []T) (ret T) {
 	return
 }
 
-func Sum[T ~int | ~float64](arr []T) (ret T) {
+func sum[T ~int | ~float64](arr []T) (ret T) {
 	for _, t := range arr {
 		ret += t
 	}
 	return
+}
+
+func Panic(err error) {
+	if err != nil {
+		panic(err.Error())
+	}
 }

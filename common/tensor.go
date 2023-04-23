@@ -5,6 +5,64 @@ import (
 	"strings"
 )
 
+type Shape []int
+
+type ShapeIter struct {
+	cur   []int
+	shape Shape
+}
+
+func (s *ShapeIter) Next() bool {
+	idx := toIndex(s.cur, s.shape)
+	return idx != s.shape.Max()-1
+}
+
+// Step
+// return current position, and increase
+func (s *ShapeIter) Step() (ret []int) {
+	ret = append([]int{}, s.cur...)
+	idx := toIndex(s.cur, s.shape)
+	s.cur = toPos(idx+1, s.shape)
+	return
+}
+
+func (s Shape) Max() int {
+	return mul(s) - 1 // 0 base
+}
+
+func (s Shape) Valid(pos []int) error {
+	e := fmt.Errorf("invalid pos %v, shape: %v", pos, s)
+	if len(pos) != len(s) {
+		return e
+	}
+
+	for i := range pos {
+		if pos[i] >= s[i] {
+			return e
+		}
+	}
+
+	return nil
+}
+
+func (s Shape) IterFrom(cur []int) ShapeIter {
+	if len(cur) != len(s) {
+		panic("invalid shape/cur")
+	}
+
+	return ShapeIter{
+		cur:   cur,
+		shape: s,
+	}
+}
+
+func (s Shape) Iter() ShapeIter {
+	return ShapeIter{
+		cur:   make([]int, len(s)),
+		shape: s,
+	}
+}
+
 // Tensor is a n-dimensional array
 // implemented with a single dimensional array with indexing tricks
 type Tensor struct {
@@ -19,7 +77,7 @@ func NewTensor[T ndb](arr T) (ret Tensor) {
 	}
 
 	ret.Shape = shape
-	var data = make([]*V, Product(shape))
+	var data = make([]*V, mul(shape))
 	buildNdArrayIntoSingleDim(arr, shape, data)
 	ret.data = data
 	return
@@ -27,6 +85,11 @@ func NewTensor[T ndb](arr T) (ret Tensor) {
 
 func (t *Tensor) Loc(loc []int) float64 {
 	return t.data[toIndex(loc, t.Shape)].data
+}
+
+func (t *Tensor) At(pos []int) *V {
+	Panic(t.Shape.Valid(pos))
+	return t.data[toIndex(pos, t.Shape)]
 }
 
 func (t Tensor) String() string {
@@ -46,9 +109,25 @@ func (t Tensor) Matmul(o Tensor) (ret Tensor) {
 		return
 	}
 
+	// ===========================
 	// normal matrix multiplication
+	// ===========================
+	newShape, _ := newShapeForMatMul(t.Shape, o.Shape)
+	ret.Shape = newShape
+	ret.data = make([]*V, newShape.Max()) // initialize
 
-	panic("invalid operation")
+	iter := newShape.Iter()
+	for iter.Next() {
+		pos := iter.Step()
+		idx := toIndex(pos, newShape)
+		ps := getMatmulPairs(t.Shape, o.Shape, pos)
+		var v []*V
+		for _, p := range ps {
+			v = append(v, t.At(p.a).Mul(o.At(p.b)))
+		}
+		ret.data[idx] = Sum(v)
+	}
+	return
 }
 
 func buildString(pos, shape []int, data []*V) string {

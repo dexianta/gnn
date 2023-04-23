@@ -216,3 +216,18 @@ func (v *V) ReLu() *V {
 	}
 	return ret
 }
+
+func Sum(vs []*V) *V {
+	if len(vs) == 0 {
+		return nil
+	}
+	if len(vs) == 1 {
+		return vs[0]
+	}
+
+	s := vs[0]
+	for i := 1; i < len(vs); i++ {
+		s = s.Add(vs[i])
+	}
+	return s
+}

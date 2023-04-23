@@ -10,6 +10,10 @@ type d2 [][]float64
 type d3 [][][]float64
 type d4 [][][][]float64
 
+func errInvalidShape(a, b Shape) error {
+	return fmt.Errorf("invalid shape: a(%v), b(%v)", a, b)
+}
+
 // ndb -> n-d array bound
 type ndb interface {
 	~[]float64 | ~[][]float64 | ~[][][]float64 | ~[][][][]float64
@@ -59,7 +63,7 @@ func toIndex(pos, shape []int) (ret int) {
 		if i == len(pos)-1 {
 			ret = pos[i]
 		} else {
-			ret += pos[i] * Product(shape[i+1:])
+			ret += pos[i] * mul(shape[i+1:])
 		}
 	}
 	return
@@ -167,13 +171,74 @@ func parseShape[T ndb](arr T, dim []int) ([]int, error) {
 	}
 }
 
-func newShapeForMatMul(a, b []int) []int {
-	// the most common matrix usecase (for me)
-	// not taking care of broadcasting, I don't find it nature anyway
-	if len(a) >= len(b) && len(b) >= 2 && a[len(a)-1] == b[len(b)-2] {
-		a[len(a)-1] = b[len(b)-1]
-		return a
+func validShapesForMatmul(a, b Shape) error {
+	if len(a) < 2 || len(b) < 2 {
+		return errInvalidShape(a, b)
+	}
+	// check the basic matmul dimension
+	if a[len(a)-1] != b[len(b)-2] {
+		return errInvalidShape(a, b)
 	}
 
-	panic("invalid shape")
+	// check the batch multiply dimension
+	for i := len(b) - 3; i >= 0; i-- {
+		if b[i] != a[i+len(a)-len(b)] {
+			return errInvalidShape(a, b)
+		}
+	}
+	return nil
+}
+
+// only support a reduced version of the matrix multiplication
+func newShapeForMatMul(a, b Shape) (ret Shape, k int) {
+	// the most common matrix usecase (for me)
+	// not taking care of broadcasting, I don't find it nature anyway
+	if len(a) < len(b) {
+		a, b = b, a
+	}
+
+	// other types of configuration
+	// e.g. [2,3] @ [3] (lower dimension stuff)
+
+	// batch or normal matmul
+	Panic(validShapesForMatmul(a, b))
+	ret = make([]int, len(a))
+	copy(ret, a)
+
+	ret[len(a)-1] = b[len(b)-1]
+	k = a[len(a)-1]
+	return
+}
+
+type matmulPair struct {
+	a []int
+	b []int
+}
+
+// sum(a(i,k) * b(k,j))
+func getMatmulPairs(a, b Shape, cPos []int) (ret []matmulPair) {
+
+	if len(a) < len(b) {
+		a, b = b, a
+	}
+
+	Panic(validShapesForMatmul(a, b))
+	// assumption:
+	// - len(a) >= 2 && len(b) >= 2
+	// - len(a) == len(cPos)
+	// - len(b) <= len(cPos)
+	// - a[len(a)-2] == b[len(b)-1]
+	k := a[len(a)-1]
+	for i := 0; i < k; i++ {
+		aa := append([]int{}, cPos...)
+		aa[len(a)-1] = i
+		bb := append([]int{}, cPos[len(cPos)-len(b):]...)
+		bb[len(b)-2] = i
+		ret = append(ret, matmulPair{
+			a: aa,
+			b: bb,
+		})
+	}
+
+	return
 }
