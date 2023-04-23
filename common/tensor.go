@@ -2,31 +2,34 @@ package common
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
 type Shape []int
 
 type ShapeIter struct {
-	cur   []int
+	idx   int
 	shape Shape
 }
 
 func (s *ShapeIter) Next() bool {
-	idx := toIndex(s.cur, s.shape)
-	return idx != s.shape.Max()-1
+	return s.idx <= s.shape.MaxIdx()
 }
 
 // Step
 // return current position, and increase
 func (s *ShapeIter) Step() (ret []int) {
-	ret = append([]int{}, s.cur...)
-	idx := toIndex(s.cur, s.shape)
-	s.cur = toPos(idx+1, s.shape)
+	ret = toPos(s.idx, s.shape)
+	s.idx++
 	return
 }
 
-func (s Shape) Max() int {
+func (s Shape) Cap() int {
+	return mul(s)
+}
+
+func (s Shape) MaxIdx() int {
 	return mul(s) - 1 // 0 base
 }
 
@@ -51,14 +54,14 @@ func (s Shape) IterFrom(cur []int) ShapeIter {
 	}
 
 	return ShapeIter{
-		cur:   cur,
+		idx:   toIndex(cur, s),
 		shape: s,
 	}
 }
 
 func (s Shape) Iter() ShapeIter {
 	return ShapeIter{
-		cur:   make([]int, len(s)),
+		idx:   0,
 		shape: s,
 	}
 }
@@ -81,6 +84,23 @@ func NewTensor[T ndb](arr T) (ret Tensor) {
 	buildNdArrayIntoSingleDim(arr, shape, data)
 	ret.data = data
 	return
+}
+
+func (t *Tensor) Equal(o Tensor) bool {
+	if !reflect.DeepEqual(t.Shape, o.Shape) {
+		return false
+	}
+
+	if len(t.data) != len(o.data) {
+		return false
+	}
+
+	for i := range t.data {
+		if t.data[i].data != o.data[i].data {
+			return false
+		}
+	}
+	return true
 }
 
 func (t *Tensor) Loc(loc []int) float64 {
@@ -114,7 +134,7 @@ func (t Tensor) Matmul(o Tensor) (ret Tensor) {
 	// ===========================
 	newShape, _ := newShapeForMatMul(t.Shape, o.Shape)
 	ret.Shape = newShape
-	ret.data = make([]*V, newShape.Max()) // initialize
+	ret.data = make([]*V, newShape.Cap()) // initialize
 
 	iter := newShape.Iter()
 	for iter.Next() {
