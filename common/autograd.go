@@ -60,7 +60,7 @@ func (v V) String() string {
 	return fmt.Sprint(v.data)
 }
 
-func NewVar(data float64) *V {
+func Vx(data float64) *V {
 	return &V{
 		data: data,
 		prev: nu,
@@ -70,6 +70,46 @@ func NewVar(data float64) *V {
 // Backward for external use, treating v as the start of back propagation
 func (v *V) Backward() {
 	v.backward(1.)
+}
+
+func (v *V) Zerograd() {
+	v.grad = 0.
+
+	switch pr := v.prev.(type) {
+	case *BinaryOp:
+		switch pr.op {
+		case Add:
+			pr.l.grad = 0
+			pr.r.grad = 0
+			pr.l.Zerograd()
+			pr.r.Zerograd()
+		case Mul:
+			pr.l.grad = 0
+			pr.r.grad = 0
+			pr.l.Zerograd()
+			pr.r.Zerograd()
+		}
+	case *PowOp:
+		// x^n --> nx^n-1
+		pr.v.grad = 0
+		pr.v.Zerograd()
+	case *ExpOp:
+		// e^x --> e^x
+		pr.v.grad = 0
+		pr.v.Zerograd()
+	case *UnaryOp:
+		switch pr.op {
+		case ReLu:
+			pr.v.grad = 0
+			pr.v.Zerograd()
+		default:
+			panic(fmt.Errorf("invalid op for UnaryOp: %T", pr.op))
+		}
+	case *NullOp:
+	default:
+		panic(fmt.Errorf("invalid op for prev: %T", pr))
+	}
+
 }
 
 // Back Propagation is the process to find out the gradient of local variable with regard to the final output of interest:
@@ -148,7 +188,7 @@ func (v *V) backward(accumulatedGrad float64) {
 }
 
 func (v *V) Neg() *V {
-	return v.Mul(NewVar(-1.))
+	return v.Mul(Vx(-1.))
 }
 
 func (v *V) Sub(o *V) *V {

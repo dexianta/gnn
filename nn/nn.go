@@ -21,12 +21,12 @@ func NewNeuron(ninput int) Neuron {
 	n := Neuron{
 		input: ninput,
 		ws:    make([]*common.V, ninput),
-		b:     common.NewVar(0.),
+		b:     common.Vx(0.),
 	}
 
 	// initialize random weight value (-1, 1)
 	for i := range n.ws {
-		n.ws[i] = common.NewVar(rand.Float64()*2. - 1.)
+		n.ws[i] = common.Vx(rand.Float64()*2. - 1.)
 	}
 	return n
 }

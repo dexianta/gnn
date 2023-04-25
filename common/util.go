@@ -27,3 +27,18 @@ func Panic(err error) {
 		panic(err.Error())
 	}
 }
+
+func Range(start, end, step float64) (ret []float64) {
+	for s := start; s < end; s += step {
+		ret = append(ret, s)
+	}
+	return
+}
+
+func Map[T any](arr []float64, f func(x float64) T) (ret []T) {
+	ret = make([]T, len(arr))
+	for i := range arr {
+		ret[i] = f(arr[i])
+	}
+	return ret
+}

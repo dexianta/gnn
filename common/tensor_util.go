@@ -74,19 +74,19 @@ func buildNdArrayIntoSingleDim[T ndb](arr T, shape []int, data []*V) {
 	switch v := any(arr).(type) {
 	case d1:
 		for _, i := range nrange(shape[0]) {
-			data[i] = NewVar(v[i])
+			data[i] = Vx(v[i])
 		}
 	case d2:
 		for _, i := range nrange(shape[0]) {
 			for _, j := range nrange(shape[1]) {
-				data[toIndex([]int{i, j}, shape)] = NewVar(v[i][j])
+				data[toIndex([]int{i, j}, shape)] = Vx(v[i][j])
 			}
 		}
 	case d3:
 		for _, i := range nrange(shape[0]) {
 			for _, j := range nrange(shape[1]) {
 				for _, k := range nrange(shape[2]) {
-					data[toIndex([]int{i, j, k}, shape)] = NewVar(v[i][j][k])
+					data[toIndex([]int{i, j, k}, shape)] = Vx(v[i][j][k])
 				}
 			}
 		}
@@ -95,7 +95,7 @@ func buildNdArrayIntoSingleDim[T ndb](arr T, shape []int, data []*V) {
 			for _, j := range nrange(shape[1]) {
 				for _, k := range nrange(shape[2]) {
 					for _, l := range nrange(shape[3]) {
-						data[toIndex([]int{i, j, k, l}, shape)] = NewVar(v[i][j][k][l])
+						data[toIndex([]int{i, j, k, l}, shape)] = Vx(v[i][j][k][l])
 					}
 				}
 			}
