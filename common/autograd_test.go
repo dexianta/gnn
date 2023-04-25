@@ -75,20 +75,22 @@ func TestVal(t *testing.T) {
 func TestTaylor(t *testing.T) {
 	// e^x = 1 + x + x^2/2! + x^3/3! + ... + x^n / n!
 	// y = 1 + x + a*x^2 + b*x^3 + c*x^4
-	a := Vx(rand.NormFloat64())
-	b := Vx(rand.NormFloat64())
-	c := Vx(rand.NormFloat64())
+	a := Vx(rand.NormFloat64()) // true val: 0.5
+	b := Vx(rand.NormFloat64()) // true val: 0.1666..
+	c := Vx(rand.NormFloat64()) // true val: 0.0416666..
+	d := Vx(rand.NormFloat64()) // true val: 0.0083333..
 
 	taylor4th := func(x *V) *V {
 		return Vx(1).
 			Add(x).
 			Add(Vx(math.Pow(x.data, 2)).Mul(a)).
 			Add(Vx(math.Pow(x.data, 3)).Mul(b)).
-			Add(Vx(math.Pow(x.data, 4)).Mul(c))
+			Add(Vx(math.Pow(x.data, 4)).Mul(c)).
+			Add(Vx(math.Pow(x.data, 5)).Mul(d))
 	}
 
-	lossFunc := func() *V {
-		// approximate it from 1 to 10
+	lossFunc := func() (*V, float64) {
+		// compute the loss
 		r := Range(-3, 3, 0.5)
 		x := Map(r, func(x float64) *V {
 			return Vx(x)
@@ -102,18 +104,26 @@ func TestTaylor(t *testing.T) {
 			tmp = append(tmp, (y[i].Sub(taylor4th(x[i]))).Pow(2))
 		}
 
-		return Sum(tmp)
+		// compute MSE
+		var mse float64
+		for i := range y {
+			err := taylor4th(Vx(x[i].data)).Sub(y[i]).data
+			mse += err * err
+		}
+
+		return Sum(tmp), mse / float64(len(y))
 	}
 
-	learningRate := 0.001
-	for i := 0; i < 100; i++ {
-		loss := lossFunc()
-		loss.Zerograd()
+	//learningRate := 0.001
+	mop := NewMomentumOptim([]*V{a, b, c, d}, 0.00001, 0.9)
+	for i := 0; i < 1000; i++ {
+		loss, mse := lossFunc()
 		loss.Backward()
-		fmt.Printf("==== (%d) ===\nloss: %f, (a, b, c): (%f, %f, %f)\n", i, loss.data, a.data, b.data, c.data)
-		a.data -= learningRate * a.grad
-		b.data -= learningRate * b.grad
-		c.data -= learningRate * c.grad
-		// zero grad
+		mop.Step()
+		if i%10 == 0 {
+			fmt.Printf("==== (%d) ===\nloss: %f, mse: %f, (a, b, c, d): (%f, %f, %f, %f)\n",
+				i, loss.data, mse, a.data, b.data, c.data, d.data)
+		}
+		mop.ZeroGrad()
 	}
 }
