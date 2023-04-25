@@ -80,7 +80,7 @@ func TestTaylor(t *testing.T) {
 	c := Vx(rand.NormFloat64()) // true val: 0.0416666..
 	d := Vx(rand.NormFloat64()) // true val: 0.0083333..
 
-	taylor4th := func(x *V) *V {
+	taylor5th := func(x *V) *V {
 		return Vx(1).
 			Add(x).
 			Add(Vx(math.Pow(x.data, 2)).Mul(a)).
@@ -101,13 +101,13 @@ func TestTaylor(t *testing.T) {
 
 		var tmp []*V
 		for i := range y {
-			tmp = append(tmp, (y[i].Sub(taylor4th(x[i]))).Pow(2))
+			tmp = append(tmp, (y[i].Sub(taylor5th(x[i]))).Pow(2))
 		}
 
 		// compute MSE
 		var mse float64
 		for i := range y {
-			err := taylor4th(Vx(x[i].data)).Sub(y[i]).data
+			err := taylor5th(Vx(x[i].data)).Sub(y[i]).data
 			mse += err * err
 		}
 
