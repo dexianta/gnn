@@ -1,4 +1,4 @@
-package common
+package core
 
 import (
 	"fmt"
@@ -72,9 +72,9 @@ func TestVal(t *testing.T) {
 	})
 }
 
-func TestTaylor(t *testing.T) {
+func TestTaylorWithV(t *testing.T) {
 	// e^x = 1 + x + x^2/2! + x^3/3! + ... + x^n / n!
-	// y = 1 + x + a*x^2 + b*x^3 + c*x^4
+	// y = 1 + x + a*x^2 + b*x^3 + c*x^4 + d*x^5
 	a := Vx(rand.NormFloat64()) // true val: 0.5
 	b := Vx(rand.NormFloat64()) // true val: 0.1666..
 	c := Vx(rand.NormFloat64()) // true val: 0.0416666..

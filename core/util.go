@@ -1,4 +1,4 @@
-package common
+package core
 
 func nrange(n int) (ret []int) {
 	for i := 0; i < n; i++ {

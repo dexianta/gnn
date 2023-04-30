@@ -1,4 +1,4 @@
-package common
+package core
 
 type MomentumOptim struct {
 	lr       float64
