@@ -87,6 +87,14 @@ func NewTensor[T ndb](arr T) (ret Tensor) {
 	return
 }
 
+func Zeros(dims ...int) Tensor {
+	shape := Shape(dims)
+	return Tensor{
+		data:  make([]*V, shape.Cap()),
+		Shape: shape,
+	}
+}
+
 func Ones(dims ...int) Tensor {
 	shape := Shape(dims)
 	t := Tensor{
@@ -127,6 +135,10 @@ func (t Tensor) Add(v float64) (ret Tensor) {
 		ret.data[i].data += v
 	}
 	return
+}
+
+func (t Tensor) Div(v float64) (ret Tensor) {
+	return t.Mul(1. / v)
 }
 
 func (t Tensor) Mul(v float64) (ret Tensor) {
