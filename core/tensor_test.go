@@ -6,6 +6,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestBroadCastable(t *testing.T) {
+	a := Ones(2, 3, 3)
+	b := Ones(1)
+	c := Ones(3, 3)
+
+	assert.True(t, broadCastable(a, b))
+	assert.True(t, broadCastable(a, c))
+	assert.True(t, broadCastable(c, a))
+	assert.False(t, broadCastable(a, Ones(2, 3)))
+}
+
 func TestTensorInit(t *testing.T) {
 	tn := NewTensor(d3{{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}})
 
@@ -51,6 +62,6 @@ func TestMatMul(t *testing.T) {
 
 		c := a.Matmul(b)
 		assert.Equal(t, c.Shape, Shape{2, 3, 5})
-		assert.True(t, c.Equal(Ones(2, 3, 5).Mul(4)))
+		assert.True(t, c.Equal(Ones(2, 3, 5).MulS(4)))
 	})
 }

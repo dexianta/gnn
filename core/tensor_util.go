@@ -9,6 +9,8 @@ type d1 []float64
 type d2 [][]float64
 type d3 [][][]float64
 type d4 [][][][]float64
+type ud1 []uint8
+type ud2 [][]uint8
 
 func errInvalidShape(a, b Shape) error {
 	return fmt.Errorf("invalid shape: a(%v), b(%v)", a, b)
@@ -16,7 +18,7 @@ func errInvalidShape(a, b Shape) error {
 
 // ndb -> n-d array bound
 type ndb interface {
-	~[]float64 | ~[][]float64 | ~[][][]float64 | ~[][][][]float64
+	~[]float64 | ~[][]float64 | ~[][][]float64 | ~[][][][]float64 | ~[]uint8 | ~[][]uint8
 }
 
 func consistentShape(shape [][]int) bool {
@@ -72,6 +74,16 @@ func toIndex(pos, shape []int) (ret int) {
 func buildNdArrayIntoSingleDim[T ndb](arr T, shape []int, data []*V) {
 	// dim should match with the shape of arr
 	switch v := any(arr).(type) {
+	case ud1:
+		for _, i := range nrange(shape[0]) {
+			data[i] = Vx(float64(v[i]))
+		}
+	case ud2:
+		for _, i := range nrange(shape[0]) {
+			for _, j := range nrange(shape[1]) {
+				data[toIndex([]int{i, j}, shape)] = Vx(float64(v[i][j]))
+			}
+		}
 	case d1:
 		for _, i := range nrange(shape[0]) {
 			data[i] = Vx(v[i])

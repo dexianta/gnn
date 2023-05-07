@@ -2,6 +2,7 @@ package data
 
 import (
 	"archive/zip"
+	"dexianta/tgnn/core"
 	"dexianta/tgnn/util"
 	"encoding/binary"
 	"fmt"
@@ -12,6 +13,10 @@ import (
 type MNIST struct {
 	Images [][]uint8
 	Labels []uint8
+}
+
+func (m MNIST) Tensors() (img, lbl core.Tensor) {
+	return core.NewTensor(m.Images), core.NewTensor(m.Labels)
 }
 
 func readSet(imgFile, lblFile fs.File) (ret MNIST) {

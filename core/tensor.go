@@ -9,6 +9,18 @@ import (
 
 type Shape []int
 
+func (s Shape) Equal(a Shape) bool {
+	if len(s) != len(a) {
+		return false
+	}
+	for i := range s {
+		if s[i] != a[i] {
+			return false
+		}
+	}
+	return true
+}
+
 type ShapeIter struct {
 	idx   int
 	shape Shape
@@ -127,28 +139,80 @@ func Randn(dims ...int) Tensor {
 	return t
 }
 
-func (t Tensor) Add(v float64) (ret Tensor) {
-	ret.Shape = t.Shape
-	ret.data = t.data
+func sortRank(a, b Tensor) (higher, lower Tensor) {
+	if len(a.Shape) > len(b.Shape) {
+		return a, b
+	}
+	return b, a
+}
+
+func broadCastable(a, b Tensor) bool {
+	h, l := sortRank(a, b)
+	if reflect.DeepEqual(l.Shape, Shape{1}) {
+		return true
+	}
+
+	diff := len(h.Shape) - len(l.Shape)
+	for i := len(l.Shape) - 1; i >= 0; i-- {
+		if l.Shape[i] != h.Shape[i+diff] {
+			return false
+		}
+	}
+	return true
+}
+
+func (t Tensor) Add(a Tensor) (ret Tensor) {
+	if t.Shape.Equal(a.Shape) {
+		ret.Shape = t.Shape
+		ret.data = make([]*V, len(t.data))
+		for i := range ret.data {
+			ret.data[i] = t.data[i].Add(a.data[i])
+		}
+		return
+	}
+
+	return
+}
+
+func (t Tensor) Div(a Tensor) (ret Tensor) {
+	if !t.Shape.Equal(a.Shape) {
+		panic("different shape")
+	}
 
 	for i := range ret.data {
-		ret.data[i].data += v
+		ret.data[i] = ret.data[i].Div(a.data[i])
 	}
 	return
 }
 
-func (t Tensor) Div(v float64) (ret Tensor) {
-	return t.Mul(1. / v)
-}
-
-func (t Tensor) Mul(v float64) (ret Tensor) {
-	ret.Shape = t.Shape
-	ret.data = t.data
+func (t Tensor) Mul(a Tensor) (ret Tensor) {
+	if !t.Shape.Equal(a.Shape) {
+		panic("different shape")
+	}
 
 	for i := range ret.data {
-		ret.data[i].data *= v
+		ret.data[i] = ret.data[i].Mul(a.data[i])
 	}
 	return
+}
+
+// S means scalar
+func (t Tensor) AddS(v float64) Tensor {
+	for i := range t.data {
+		t.data[i].data = t.data[i].data + v
+	}
+	return t
+}
+
+func (t Tensor) MulS(v float64) Tensor {
+	for i := range t.data {
+		t.data[i].data = t.data[i].data / v
+	}
+	return t
+}
+
+func (t Tensor) DivS(v float64) Tensor {
+	return t.MulS(1 / v)
 }
 
 func (t *Tensor) Equal(o Tensor) bool {
