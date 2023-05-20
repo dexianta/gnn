@@ -1,10 +1,22 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestToIndex(t *testing.T) {
+	s1 := Shape{2, 3, 3}
+	s2 := Shape{3, 3}
+
+	iter := s1.Iter()
+	for iter.Next() {
+		pos := iter.Step()
+		fmt.Printf("s1: %v, s2: %v\n", pos, toPosTruncate(toIndex(pos, s1), s2))
+	}
+}
 
 func TestConsistentDims(t *testing.T) {
 	assert.False(t, consistentShape([][]int{{2, 3}, {1, 3}}))

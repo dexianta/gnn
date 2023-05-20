@@ -39,6 +39,11 @@ var (
 	ErrInvalidShape = errors.New("invalid shape")
 )
 
+func toPosTruncate(idx int, shape []int) []int {
+	idx = idx % mul(shape)
+	return toPos(idx, shape)
+}
+
 // (2,2,2) shape
 // (0, 0, 0) -> 0
 // (0, 0, 1) -> 1

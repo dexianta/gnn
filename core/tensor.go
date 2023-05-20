@@ -146,15 +146,16 @@ func sortRank(a, b Tensor) (higher, lower Tensor) {
 	return b, a
 }
 
-func broadCastable(a, b Tensor) bool {
-	h, l := sortRank(a, b)
-	if reflect.DeepEqual(l.Shape, Shape{1}) {
+// only support a simpler version of broadcast
+func canBroadcast(a, b Tensor) bool {
+	highRank, lowRank := sortRank(a, b)
+	if reflect.DeepEqual(lowRank.Shape, Shape{1}) {
 		return true
 	}
 
-	diff := len(h.Shape) - len(l.Shape)
-	for i := len(l.Shape) - 1; i >= 0; i-- {
-		if l.Shape[i] != h.Shape[i+diff] {
+	diff := len(highRank.Shape) - len(lowRank.Shape)
+	for i := len(lowRank.Shape) - 1; i >= 0; i-- {
+		if lowRank.Shape[i] != highRank.Shape[i+diff] {
 			return false
 		}
 	}
@@ -169,6 +170,17 @@ func (t Tensor) Add(a Tensor) (ret Tensor) {
 			ret.data[i] = t.data[i].Add(a.data[i])
 		}
 		return
+	}
+
+	if canBroadcast(t, a) {
+		h, l := sortRank(t, a)
+		ret.Shape = h.Shape // set the shape
+		ret.data = make([]*V, len(h.data))
+		for i := range ret.data {
+			ret.data[i] = h.data[i].Add(l.data[i%l.Shape.Cap()])
+		}
+	} else {
+		panic("cannot add")
 	}
 
 	return

@@ -15,11 +15,10 @@ func TestMinstBasic(t *testing.T) {
 	trainX, trainY := train.Tensors()
 	testX, testY := test.Tensors()
 
-	logMax := func(in core.Tensor) core.Tensor {
-
-  }
+	//logMax := func(in core.Tensor) core.Tensor {
+	//}
 
 	model := func(input core.Tensor) core.Tensor {
-		input.Matmul(weights).Add(bias)
+		return input.Matmul(weights).Add(bias)
 	}
 }

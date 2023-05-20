@@ -11,10 +11,10 @@ func TestBroadCastable(t *testing.T) {
 	b := Ones(1)
 	c := Ones(3, 3)
 
-	assert.True(t, broadCastable(a, b))
-	assert.True(t, broadCastable(a, c))
-	assert.True(t, broadCastable(c, a))
-	assert.False(t, broadCastable(a, Ones(2, 3)))
+	assert.True(t, canBroadcast(a, b))
+	assert.True(t, canBroadcast(a, c))
+	assert.True(t, canBroadcast(c, a))
+	assert.False(t, canBroadcast(a, Ones(2, 3)))
 }
 
 func TestTensorInit(t *testing.T) {
@@ -43,6 +43,19 @@ func TestShapeIter(t *testing.T) {
 	}
 
 	assert.Equal(t, 12, iter.idx)
+}
+
+func TestAdd(t *testing.T) {
+	a := Ones(2, 3, 3)
+	b := Ones(3, 3)
+
+	c := a.Add(b)
+	d := Ones(2, 3, 3).Add(Ones(1))
+
+	assert.True(t, c.Equal(d))
+	for _, v := range c.data {
+		assert.Equal(t, v.data, 2.0)
+	}
 }
 
 func TestMatMul(t *testing.T) {
