@@ -3,6 +3,7 @@ package examples
 import (
 	"dexianta/tgnn/core"
 	"dexianta/tgnn/data"
+	"fmt"
 	"math"
 	"testing"
 )
@@ -21,4 +22,7 @@ func TestMinstBasic(t *testing.T) {
 	model := func(input core.Tensor) core.Tensor {
 		return input.Matmul(weights).Add(bias)
 	}
+
+	fmt.Println(trainY.Shape, testX.Shape, testY.Shape)
+	model(trainX[0:4])
 }

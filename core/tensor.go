@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+type Slice [][2]int
 type Shape []int
 
 func (s Shape) Equal(a Shape) bool {
