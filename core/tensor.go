@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type Slice [][2]int
+type S [2]int // for slice
 type Shape []int
 
 func (s Shape) Equal(a Shape) bool {
@@ -163,22 +163,37 @@ func canBroadcast(a, b Tensor) bool {
 	return true
 }
 
-func (t Tensor) Add(a Tensor) (ret Tensor) {
-	if t.Shape.Equal(a.Shape) {
-		ret.Shape = t.Shape
-		ret.data = make([]*V, len(t.data))
+func basicOp(a, b *V, op string) *V {
+	switch op {
+	case "*":
+		return a.Mul(b)
+	case "+":
+		return a.Add(b)
+	case "/":
+		return a.Div(b)
+	case "-":
+		return a.Sub(b)
+	default:
+		panic("invalid op")
+	}
+}
+
+func broadcastOp(x, y Tensor, op string) (ret Tensor) {
+	if x.Shape.Equal(y.Shape) {
+		ret.Shape = x.Shape
+		ret.data = make([]*V, len(x.data))
 		for i := range ret.data {
-			ret.data[i] = t.data[i].Add(a.data[i])
+			ret.data[i] = basicOp(x.data[i], y.data[i], op)
 		}
 		return
 	}
 
-	if canBroadcast(t, a) {
-		h, l := sortRank(t, a)
+	if canBroadcast(x, y) {
+		h, _ := sortRank(x, y)
 		ret.Shape = h.Shape // set the shape
 		ret.data = make([]*V, len(h.data))
 		for i := range ret.data {
-			ret.data[i] = h.data[i].Add(l.data[i%l.Shape.Cap()])
+			ret.data[i] = basicOp(x.data[i], y.data[i], op)
 		}
 	} else {
 		panic("cannot add")
@@ -187,26 +202,20 @@ func (t Tensor) Add(a Tensor) (ret Tensor) {
 	return
 }
 
-func (t Tensor) Div(a Tensor) (ret Tensor) {
-	if !t.Shape.Equal(a.Shape) {
-		panic("different shape")
-	}
+func (t Tensor) Add(a Tensor) (ret Tensor) {
+	return broadcastOp(t, a, "+")
+}
 
-	for i := range ret.data {
-		ret.data[i] = ret.data[i].Div(a.data[i])
-	}
-	return
+func (t Tensor) Sub(a Tensor) (ret Tensor) {
+	return broadcastOp(t, a, "-")
 }
 
 func (t Tensor) Mul(a Tensor) (ret Tensor) {
-	if !t.Shape.Equal(a.Shape) {
-		panic("different shape")
-	}
+	return broadcastOp(t, a, "*")
+}
 
-	for i := range ret.data {
-		ret.data[i] = ret.data[i].Mul(a.data[i])
-	}
-	return
+func (t Tensor) Div(a Tensor) (ret Tensor) {
+	return broadcastOp(t, a, "/")
 }
 
 // S means scalar
@@ -289,6 +298,74 @@ func (t Tensor) Matmul(o Tensor) (ret Tensor) {
 		}
 		ret.data[idx] = Sum(v)
 	}
+	return
+}
+
+func toVerboseSlice(sl [][2]int, shape Shape) (ret [][2]int) {
+	ret = make([][2]int, len(shape))
+	for i := range shape {
+		if i >= len(sl) {
+			ret[i] = [2]int{0, shape[i]}
+		} else {
+			ret[i] = sl[i]
+		}
+	}
+	return
+}
+
+func inRange(idx int, verboseRange [][2]int, shape Shape) (bool, []int) {
+	if len(verboseRange) != len(shape) {
+		panic("verbose slice range is not valid")
+	}
+
+	pos := toPos(idx, shape)
+	newPos := make([]int, len(pos))
+	for i := range pos {
+		if pos[i] >= verboseRange[i][1] || pos[i] < verboseRange[i][0] {
+			return false, []int{}
+		}
+		newPos[i] = pos[i] - verboseRange[i][0]
+	}
+
+	return true, newPos
+}
+
+func (t Tensor) Slice(sl ...[2]int) (ret Tensor) {
+	if len(sl) > len(t.Shape) {
+		panic("invalid slicing")
+	}
+
+	for i := range sl {
+		if sl[i][0] < 0 || sl[i][1] < 0 {
+			panic("negative slice not supported")
+		}
+		if sl[i][0] > sl[i][1] {
+			panic("invalid slicing: start>end")
+		}
+		if sl[i][1] > t.Shape[i] {
+			panic(fmt.Sprintf("out of range index: %v, shape: %v", sl, t.Shape))
+		}
+	}
+
+	// initialize new Tensor
+	// new shape
+	ret.Shape = make(Shape, len(t.Shape))
+	for i := range t.Shape {
+		if i >= len(sl) {
+			ret.Shape[i] = t.Shape[i]
+		} else {
+			ret.Shape[i] = sl[i][1] - sl[i][0]
+		}
+	}
+	ret.data = make([]*V, ret.Shape.Cap())
+
+	verboseSlice := toVerboseSlice(sl, t.Shape)
+	for i := range t.data {
+		if ok, pos := inRange(i, verboseSlice, t.Shape); ok {
+			ret.data[toIndex(pos, ret.Shape)] = t.data[i]
+		}
+	}
+
 	return
 }
 

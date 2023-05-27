@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,6 +44,33 @@ func TestShapeIter(t *testing.T) {
 	}
 
 	assert.Equal(t, 12, iter.idx)
+}
+
+func TestSlice(t *testing.T) {
+	df := NewTensor(d2{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})
+
+	s1 := df.Slice(S{0, 2})
+	expected1 := NewTensor(d2{{1, 2, 3}, {4, 5, 6}})
+	assert.True(t, s1.Equal(expected1))
+
+	s2 := df.Slice(S{1, 2})
+	expected2 := NewTensor(d2{{4, 5, 6}})
+	assert.True(t, s2.Equal(expected2))
+
+	s3 := df.Slice(S{0, 2}, S{1, 3})
+	expected3 := NewTensor(d2{{2, 3}, {5, 6}})
+	assert.True(t, s3.Equal(expected3))
+}
+
+func TestInRange(t *testing.T) {
+	// {3,3,3} slice {1:2}
+	shape := Shape{3, 3, 3}
+	sl := [][2]int{{0, 2}}
+	verbose := toVerboseSlice(sl, shape)
+	for i := 0; i < 27; i++ {
+		ok, pos := inRange(i, verbose, shape)
+		fmt.Println(toPos(i, shape), ok, pos)
+	}
 }
 
 func TestAdd(t *testing.T) {
