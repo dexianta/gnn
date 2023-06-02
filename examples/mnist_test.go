@@ -16,13 +16,10 @@ func TestMinstBasic(t *testing.T) {
 	trainX, trainY := train.Tensors()
 	testX, testY := test.Tensors()
 
-	//logMax := func(in core.Tensor) core.Tensor {
-	//}
-
 	model := func(input core.Tensor) core.Tensor {
 		return input.Matmul(weights).Add(bias)
 	}
 
 	fmt.Println(trainY.Shape, testX.Shape, testY.Shape)
-	model(trainX[0:4])
+	model(trainX.Slice(core.S{0, 64}))
 }

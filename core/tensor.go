@@ -9,6 +9,7 @@ import (
 
 type S [2]int // for slice
 type Shape []int
+type Pos []int
 
 func (s Shape) Equal(a Shape) bool {
 	if len(s) != len(a) {
@@ -33,7 +34,7 @@ func (s *ShapeIter) Next() bool {
 
 // Step
 // return current position, and increase
-func (s *ShapeIter) Step() (ret []int) {
+func (s *ShapeIter) Step() (ret Pos) {
 	ret = toPos(s.idx, s.shape)
 	s.idx++
 	return
@@ -47,7 +48,7 @@ func (s Shape) MaxIdx() int {
 	return mul(s) - 1 // 0 base
 }
 
-func (s Shape) Valid(pos []int) error {
+func (s Shape) Valid(pos Pos) error {
 	e := fmt.Errorf("invalid pos %v, shape: %v", pos, s)
 	if len(pos) != len(s) {
 		return e

@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 func nrange(n int) (ret []int) {
 	for i := 0; i < n; i++ {
 		ret = append(ret, i)
@@ -41,4 +43,21 @@ func Map[T any](arr []float64, f func(x float64) T) (ret []T) {
 		ret[i] = f(arr[i])
 	}
 	return ret
+}
+
+func DimIter(pos Pos, dim int, shape Shape) (ret []Pos) {
+	if dim > len(pos) {
+		panic(fmt.Sprintf("invalid dim: %d for pos: %v", dim, pos))
+	}
+	if err := shape.Valid(pos); err != nil {
+		panic(err.Error())
+	}
+
+	for i := 0; i < shape[dim]; i++ {
+		var tmp = make(Pos, len(pos))
+		copy(tmp, pos)
+		tmp[dim] = i
+		ret = append(ret, tmp)
+	}
+	return
 }
