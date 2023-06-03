@@ -88,6 +88,10 @@ type Tensor struct {
 	Shape Shape
 }
 
+func (t Tensor) Dim() int {
+	return len(t.Shape)
+}
+
 func NewTensor[T ndb](arr T) (ret Tensor) {
 	shape, err := parseShape(arr, []int{})
 	if err != nil {
@@ -109,6 +113,22 @@ func Zeros(dims ...int) Tensor {
 	}
 }
 
+func All(val float64, dims []int) Tensor {
+	shape := Shape(dims)
+	t := Tensor{
+		data:  make([]*V, shape.Cap()),
+		Shape: shape,
+	}
+
+	for i := range t.data {
+		t.data[i] = &V{
+			Data: val,
+		}
+	}
+
+	return t
+}
+
 func Ones(dims ...int) Tensor {
 	shape := Shape(dims)
 	t := Tensor{
@@ -118,7 +138,7 @@ func Ones(dims ...int) Tensor {
 
 	for i := range t.data {
 		t.data[i] = &V{
-			data: 1,
+			Data: 1,
 		}
 	}
 
@@ -134,7 +154,7 @@ func Randn(dims ...int) Tensor {
 
 	for i := range t.data {
 		t.data[i] = &V{
-			data: rand.NormFloat64(),
+			Data: rand.NormFloat64(),
 		}
 	}
 
@@ -222,14 +242,14 @@ func (t Tensor) Div(a Tensor) (ret Tensor) {
 // S means scalar
 func (t Tensor) AddS(v float64) Tensor {
 	for i := range t.data {
-		t.data[i].data = t.data[i].data + v
+		t.data[i].Data = t.data[i].Data + v
 	}
 	return t
 }
 
 func (t Tensor) MulS(v float64) Tensor {
 	for i := range t.data {
-		t.data[i].data = t.data[i].data / v
+		t.data[i].Data = t.data[i].Data / v
 	}
 	return t
 }
@@ -248,7 +268,8 @@ func (t *Tensor) Equal(o Tensor) bool {
 	}
 
 	for i := range t.data {
-		if t.data[i].data != o.data[i].data {
+		if t.data[i].Data != o.data[i].Data {
+			fmt.Printf("inequality: %v, %v\n", t.data[i].Data, o.data[i].Data)
 			return false
 		}
 	}
@@ -256,7 +277,7 @@ func (t *Tensor) Equal(o Tensor) bool {
 }
 
 func (t *Tensor) Loc(loc []int) float64 {
-	return t.data[toIndex(loc, t.Shape)].data
+	return t.data[toIndex(loc, t.Shape)].Data
 }
 
 func (t *Tensor) At(pos []int) *V {

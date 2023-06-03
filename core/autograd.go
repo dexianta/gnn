@@ -50,19 +50,19 @@ var nu = &NullOp{} // for leaf node
 //
 //	V{data: 3, prev: BinaryOp{op: Add, l: v1, r: v2}}
 type V struct {
-	data float64
-	grad float64
+	Data float64
+	Grad float64
 
 	prev any // BinaryOp / UnaryOp / PowOp / ExpOp / NullOp (leaf node)
 }
 
 func (v V) String() string {
-	return fmt.Sprint(v.data)
+	return fmt.Sprint(v.Data)
 }
 
 func Vx(data float64) *V {
 	return &V{
-		data: data,
+		Data: data,
 		prev: nu,
 	}
 }
@@ -73,34 +73,34 @@ func (v *V) Backward() {
 }
 
 func (v *V) Zerograd() {
-	v.grad = 0.
+	v.Grad = 0.
 
 	switch pr := v.prev.(type) {
 	case *BinaryOp:
 		switch pr.op {
 		case Add:
-			pr.l.grad = 0
-			pr.r.grad = 0
+			pr.l.Grad = 0
+			pr.r.Grad = 0
 			pr.l.Zerograd()
 			pr.r.Zerograd()
 		case Mul:
-			pr.l.grad = 0
-			pr.r.grad = 0
+			pr.l.Grad = 0
+			pr.r.Grad = 0
 			pr.l.Zerograd()
 			pr.r.Zerograd()
 		}
 	case *PowOp:
 		// x^n --> nx^n-1
-		pr.v.grad = 0
+		pr.v.Grad = 0
 		pr.v.Zerograd()
 	case *ExpOp:
 		// e^x --> e^x
-		pr.v.grad = 0
+		pr.v.Grad = 0
 		pr.v.Zerograd()
 	case *UnaryOp:
 		switch pr.op {
 		case ReLu:
-			pr.v.grad = 0
+			pr.v.Grad = 0
 			pr.v.Zerograd()
 		default:
 			panic(fmt.Errorf("invalid op for UnaryOp: %T", pr.op))
@@ -141,43 +141,43 @@ func (v *V) Zerograd() {
 // externalGrad is needed to kick-off the traverse
 // TODO: as golang does not seem to support tail call optimization, this will eventually stackoverflow.
 func (v *V) backward(accumulatedGrad float64) {
-	v.grad = accumulatedGrad
+	v.Grad = accumulatedGrad
 	switch pr := v.prev.(type) {
 	case *BinaryOp:
 		switch pr.op {
 		case Add:
 			// for addition, x + y
 			// the way to calculate gradient is accumulated_grad * d(x + y)/dx = accumulated_grad
-			pr.l.grad += v.grad // if the Val were used multiple times, we need to accumulate the gradient
-			pr.r.grad += v.grad
-			pr.l.backward(pr.l.grad)
-			pr.r.backward(pr.r.grad)
+			pr.l.Grad += v.Grad // if the Val were used multiple times, we need to accumulate the gradient
+			pr.r.Grad += v.Grad
+			pr.l.backward(pr.l.Grad)
+			pr.r.backward(pr.r.Grad)
 		case Mul:
 			// for multiplication, x * y
 			// the way to calculate gradient is accumulated_grad * d(x*y)/dx = accumulated_grad * y
-			pr.l.grad += pr.r.data * v.grad
-			pr.r.grad += pr.l.data * v.grad
-			pr.l.backward(pr.l.grad)
-			pr.r.backward(pr.r.grad)
+			pr.l.Grad += pr.r.Data * v.Grad
+			pr.r.Grad += pr.l.Data * v.Grad
+			pr.l.backward(pr.l.Grad)
+			pr.r.backward(pr.r.Grad)
 		}
 	case *PowOp:
 		// x^n --> nx^n-1
-		pr.v.grad += pr.p * math.Pow(pr.v.data, pr.p-1) * v.grad
-		pr.v.backward(pr.v.grad)
+		pr.v.Grad += pr.p * math.Pow(pr.v.Data, pr.p-1) * v.Grad
+		pr.v.backward(pr.v.Grad)
 
 	case *ExpOp:
 		// e^x --> e^x
-		pr.v.grad += math.Exp(pr.v.data) * v.grad
-		pr.v.backward(pr.v.grad)
+		pr.v.Grad += math.Exp(pr.v.Data) * v.Grad
+		pr.v.backward(pr.v.Grad)
 	case *UnaryOp:
 		switch pr.op {
 		case ReLu:
-			if v.data > 0 {
-				pr.v.grad += v.grad
+			if v.Data > 0 {
+				pr.v.Grad += v.Grad
 			} else {
-				pr.v.grad += 0 // for readability
+				pr.v.Grad += 0 // for readability
 			}
-			pr.v.backward(pr.v.grad)
+			pr.v.backward(pr.v.Grad)
 		default:
 			panic(fmt.Errorf("invalid op for UnaryOp: %T", pr.op))
 		}
@@ -197,7 +197,7 @@ func (v *V) Sub(o *V) *V {
 
 func (v *V) Add(o *V) *V {
 	ret := &V{}
-	ret.data = v.data + o.data
+	ret.Data = v.Data + o.Data
 	ret.prev = &BinaryOp{
 		op: Add,
 		l:  v,
@@ -208,7 +208,7 @@ func (v *V) Add(o *V) *V {
 
 func (v *V) Mul(o *V) *V {
 	ret := &V{}
-	ret.data = v.data * o.data
+	ret.Data = v.Data * o.Data
 	ret.prev = &BinaryOp{
 		op: Mul,
 		l:  v,
@@ -225,7 +225,7 @@ func (v *V) Div(o *V) *V {
 // base with nature e
 func (v *V) Exp() *V {
 	ret := &V{}
-	ret.data = math.Exp(v.data)
+	ret.Data = math.Exp(v.Data)
 	ret.prev = &ExpOp{
 		v: v,
 	}
@@ -234,7 +234,7 @@ func (v *V) Exp() *V {
 
 func (v *V) Pow(p float64) *V {
 	ret := &V{}
-	ret.data = math.Pow(v.data, p)
+	ret.Data = math.Pow(v.Data, p)
 	ret.prev = &PowOp{
 		v: v,
 		p: p,
@@ -249,12 +249,19 @@ func (v *V) ReLu() *V {
 			v:  v,
 		},
 	}
-	if v.data < 0 {
-		ret.data = 0
+	if v.Data < 0 {
+		ret.Data = 0
 	} else {
-		ret.data = v.data
+		ret.Data = v.Data
 	}
 	return ret
+}
+
+func MapV(vs []*V, fn func(v *V) *V) []*V {
+	for i := range vs {
+		vs[i] = fn(vs[i])
+	}
+	return vs
 }
 
 func Sum(vs []*V) *V {

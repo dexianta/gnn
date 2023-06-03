@@ -82,7 +82,7 @@ func TestAdd(t *testing.T) {
 
 	assert.True(t, c.Equal(d))
 	for _, v := range c.data {
-		assert.Equal(t, v.data, 2.0)
+		assert.Equal(t, v.Data, 2.0)
 	}
 }
 

@@ -18,13 +18,13 @@ func NewMomentumOptim(vs []*V, lr, m float64) MomentumOptim {
 
 func (m *MomentumOptim) Step() {
 	for i := range m.velocity {
-		m.velocity[i] = m.velocity[i]*m.m + m.lr*m.vs[i].grad
-		m.vs[i].data -= m.velocity[i]
+		m.velocity[i] = m.velocity[i]*m.m + m.lr*m.vs[i].Grad
+		m.vs[i].Data -= m.velocity[i]
 	}
 }
 
 func (m MomentumOptim) ZeroGrad() {
 	for _, v := range m.vs {
-		v.grad = 0
+		v.Grad = 0
 	}
 }
