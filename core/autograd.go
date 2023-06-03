@@ -17,6 +17,10 @@ const (
 	ReLu Op = "relu"
 )
 
+type LogOp struct {
+	v *V
+}
+
 type BinaryOp struct {
 	op Op
 	l  *V // left
@@ -89,6 +93,9 @@ func (v *V) Zerograd() {
 			pr.l.Zerograd()
 			pr.r.Zerograd()
 		}
+	case *LogOp:
+		pr.v.Grad = 0
+		pr.v.Zerograd()
 	case *PowOp:
 		// x^n --> nx^n-1
 		pr.v.Grad = 0
@@ -160,6 +167,9 @@ func (v *V) backward(accumulatedGrad float64) {
 			pr.l.backward(pr.l.Grad)
 			pr.r.backward(pr.r.Grad)
 		}
+	case *LogOp:
+		pr.v.Grad = 1.0 / pr.v.Data
+		pr.v.backward(pr.v.Grad)
 	case *PowOp:
 		// x^n --> nx^n-1
 		pr.v.Grad += pr.p * math.Pow(pr.v.Data, pr.p-1) * v.Grad
@@ -227,6 +237,15 @@ func (v *V) Exp() *V {
 	ret := &V{}
 	ret.Data = math.Exp(v.Data)
 	ret.prev = &ExpOp{
+		v: v,
+	}
+	return ret
+}
+
+func (v *V) Log() *V {
+	ret := &V{}
+	ret.Data = math.Log(v.Data)
+	ret.prev = &LogOp{
 		v: v,
 	}
 	return ret

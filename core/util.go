@@ -1,6 +1,10 @@
 package core
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"math"
+)
 
 func nrange(n int) (ret []int) {
 	for i := 0; i < n; i++ {
@@ -60,4 +64,19 @@ func DimIter(pos Pos, dim int, shape Shape) (ret []Pos) {
 		ret = append(ret, tmp)
 	}
 	return
+}
+
+func EqualFloatArray(a, b []float64, err float64) error {
+	err = math.Abs(err)
+	if len(a) != len(b) {
+		return errors.New("different length")
+	}
+
+	for i := range a {
+
+		if math.Abs(a[i]-b[i]) > err {
+			return fmt.Errorf("%f - %f > %f", a[i], b[i], err)
+		}
+	}
+	return nil
 }

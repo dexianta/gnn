@@ -18,5 +18,16 @@ func TestSoftmax(t *testing.T) {
 	assert.True(t, expected0.Equal(ret0))
 	assert.True(t, expected1.Equal(ret1))
 	assert.True(t, expected2.Equal(ret2))
+}
 
+func TestSoftmaxBackward(t *testing.T) {
+	a := NewTensor(d1{1., 2., 3., 4.})
+	b := Softmax(a, 0)
+	b.data[0].Backward()
+	assert.Nil(t,
+		EqualFloatArray(
+			a.Grad(),
+			[]float64{0.031, -0.0028, -0.0076, -0.0206},
+			0.01),
+	)
 }

@@ -26,3 +26,11 @@ func Softmax(a Tensor, dim int) (ret Tensor) {
 
 	return
 }
+
+func LogSoftmax(a Tensor, dim int) (ret Tensor) {
+	ret = Softmax(a, dim)
+	for i := range ret.data {
+		ret.data[i] = ret.data[i].Log()
+	}
+	return ret
+}

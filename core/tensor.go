@@ -258,6 +258,14 @@ func (t Tensor) DivS(v float64) Tensor {
 	return t.MulS(1 / v)
 }
 
+func (t Tensor) Grad() (ret []float64) {
+	ret = make([]float64, len(t.data))
+	for i := range t.data {
+		ret[i] = t.data[i].Grad
+	}
+	return ret
+}
+
 func (t *Tensor) Equal(o Tensor) bool {
 	if !reflect.DeepEqual(t.Shape, o.Shape) {
 		return false
@@ -286,7 +294,15 @@ func (t *Tensor) At(pos []int) *V {
 }
 
 func (t Tensor) String() string {
-	return fmt.Sprintf("\n%s\n", buildString([]int{}, t.Shape, t.data))
+	return fmt.Sprintf("\n%s\n", buildString([]int{}, t.Shape, t.data, "data"))
+}
+
+func (t Tensor) PrintData() {
+	fmt.Println(buildString([]int{}, t.Shape, t.data, "data"))
+}
+
+func (t Tensor) PrintGrad() {
+	fmt.Println(buildString([]int{}, t.Shape, t.data, "grad"))
 }
 
 // matrix multiplication
@@ -391,13 +407,20 @@ func (t Tensor) Slice(sl ...[2]int) (ret Tensor) {
 	return
 }
 
-func buildString(pos, shape []int, data []*V) string {
+func buildString(pos, shape []int, data []*V, field string) string {
 	var tmp []string
 	if len(pos) == len(shape)-1 {
 		pos = append(pos, 0)
 		start := toIndex(pos, shape)
 		for i := 0; i < shape[len(shape)-1]; i++ {
-			tmp = append(tmp, fmt.Sprint(data[start+i]))
+			switch field {
+			case "data":
+				tmp = append(tmp, fmt.Sprintf("%.4f", data[start+i].Data))
+			case "grad":
+				tmp = append(tmp, fmt.Sprintf("%.4f", data[start+i].Grad))
+			default:
+				panic("invalid field to build string")
+			}
 		}
 
 		return fmt.Sprint(tmp)
@@ -405,7 +428,7 @@ func buildString(pos, shape []int, data []*V) string {
 
 	// len(pos) is the depth of recursion
 	for i := 0; i < shape[len(pos)]; i++ {
-		tmp = append(tmp, buildString(append(pos, i), shape, data))
+		tmp = append(tmp, buildString(append(pos, i), shape, data, field))
 	}
 	return fmt.Sprintf("[%s]", strings.Join(tmp, strings.Repeat("\n", len(shape)-len(pos)-1)))
 }
