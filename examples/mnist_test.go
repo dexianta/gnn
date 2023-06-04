@@ -35,5 +35,6 @@ func TestBasicMnist(t *testing.T) {
 	preds := model(trainX.Slice(core.S{0, 64}))
 	target := trainY.Slice(core.S{0, 64})
 	loss := lossFunc(preds, target)
+  loss.Backward()
 	fmt.Println(loss)
 }
