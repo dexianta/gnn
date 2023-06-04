@@ -128,7 +128,7 @@ func Zeros(dims ...int) Tensor {
 		Shape: shape,
 	}
 	for i := range ret.data {
-		ret.data[i] = &V{}
+		ret.data[i] = Vx(0)
 	}
 	return ret
 }
@@ -141,9 +141,7 @@ func All(val float64, dims []int) Tensor {
 	}
 
 	for i := range t.data {
-		t.data[i] = &V{
-			Data: val,
-		}
+		t.data[i] = Vx(val)
 	}
 
 	return t
@@ -157,9 +155,7 @@ func Ones(dims ...int) Tensor {
 	}
 
 	for i := range t.data {
-		t.data[i] = &V{
-			Data: 1,
-		}
+		t.data[i] = Vx(1)
 	}
 
 	return t
@@ -173,9 +169,7 @@ func Randn(dims ...int) Tensor {
 	}
 
 	for i := range t.data {
-		t.data[i] = &V{
-			Data: rand.NormFloat64(),
-		}
+		t.data[i] = Vx(rand.NormFloat64())
 	}
 
 	return t

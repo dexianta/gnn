@@ -168,7 +168,7 @@ func (v *V) backward(accumulatedGrad float64) {
 			pr.r.backward(pr.r.Grad)
 		}
 	case *LogOp:
-		pr.v.Grad = 1.0 / pr.v.Data
+		pr.v.Grad = 1. / pr.v.Data
 		pr.v.backward(pr.v.Grad)
 	case *PowOp:
 		// x^n --> nx^n-1
@@ -193,7 +193,7 @@ func (v *V) backward(accumulatedGrad float64) {
 		}
 	case *NullOp:
 	default:
-		panic(fmt.Errorf("invalid op for prev: %T", pr))
+		panic(fmt.Errorf("invalid op for prev: %T, v: %v", pr, *v))
 	}
 }
 
@@ -284,7 +284,7 @@ func MapV(vs []*V, fn func(v *V) *V) []*V {
 }
 
 func Mean(vs []*V) *V {
-	return Sum(vs).Div(&V{Data: float64(len(vs))})
+	return Sum(vs).Div(Vx(float64(len(vs))))
 }
 
 func Sum(vs []*V) *V {
