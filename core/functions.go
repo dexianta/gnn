@@ -21,7 +21,9 @@ func Softmax(a Tensor, dim int) (ret Tensor) {
 		fn := func(v *V) *V {
 			return v.Exp()
 		}
-		ret.data[i] = a.data[i].Exp().Div(Sum(MapV(tmp, fn)))
+		num := a.data[i].Exp()
+		denum := Sum(MapV(tmp, fn))
+		ret.data[i] = num.Div(denum)
 	}
 
 	return

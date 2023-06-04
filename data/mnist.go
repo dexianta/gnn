@@ -16,6 +16,18 @@ type MNIST struct {
 }
 
 func (m MNIST) Tensors() (img, lbl core.Tensor) {
+	// need to turn uint8 into float64
+	//var imgs = make([][]float64, len(m.Images))
+	//var lbes = make([]float64, len(m.Labels))
+	//for i := range m.Images {
+	//	imgs[i] = make([]float64, len(m.Images[i]))
+	//	for j := range m.Images[i] {
+	//		imgs[i][j] = float64(m.Images[i][j])
+	//	}
+	//}
+	//for i := range m.Labels {
+	//	lbes[i] = float64(m.Labels[i])
+	//}
 	return core.NewTensor(m.Images), core.NewTensor(m.Labels)
 }
 

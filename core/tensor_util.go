@@ -9,8 +9,6 @@ type d1 []float64
 type d2 [][]float64
 type d3 [][][]float64
 type d4 [][][][]float64
-type ud1 []uint8
-type ud2 [][]uint8
 
 func errInvalidShape(a, b Shape) error {
 	return fmt.Errorf("invalid shape: a(%v), b(%v)", a, b)
@@ -79,11 +77,11 @@ func toIndex(pos, shape []int) (ret int) {
 func buildNdArrayIntoSingleDim[T ndb](arr T, shape []int, data []*V) {
 	// dim should match with the shape of arr
 	switch v := any(arr).(type) {
-	case ud1:
+	case []uint8:
 		for _, i := range nrange(shape[0]) {
 			data[i] = Vx(float64(v[i]))
 		}
-	case ud2:
+	case [][]uint8:
 		for _, i := range nrange(shape[0]) {
 			for _, j := range nrange(shape[1]) {
 				data[toIndex([]int{i, j}, shape)] = Vx(float64(v[i][j]))
@@ -125,10 +123,27 @@ func buildNdArrayIntoSingleDim[T ndb](arr T, shape []int, data []*V) {
 // parseShape parses the dimension of a given tensor
 func parseShape[T ndb](arr T, dim []int) ([]int, error) {
 	switch v := any(arr).(type) {
+	case []uint8:
+		return append(dim, len(v)), nil
 	case d1:
 		//==============
 		return append(dim, len(v)), nil
-
+	case [][]uint8:
+		if len(v) == 0 {
+			return dim, ErrInvalidShape
+		}
+		var dims [][]int
+		for _, vv := range v {
+			d, err := parseShape(vv, dim)
+			if err != nil {
+				return dim, err
+			}
+			dims = append(dims, d)
+		}
+		if !consistentShape(dims) {
+			return dim, ErrInvalidShape
+		}
+		return append([]int{len(v)}, dims[0]...), nil
 	case d2:
 		//==============
 		if len(v) == 0 {

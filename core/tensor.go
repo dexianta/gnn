@@ -89,6 +89,13 @@ type Tensor struct {
 	Shape Shape
 }
 
+func (t Tensor) GetBatchV(pos []Pos) (ret []*V) {
+	for _, p := range pos {
+		ret = append(ret, t.data[toIndex(p, t.Shape)])
+	}
+	return
+}
+
 func (t Tensor) GetV(pos Pos) *V {
 	if len(pos) != len(t.Shape) {
 		panic("invalid pos")
@@ -116,10 +123,14 @@ func NewTensor[T ndb](arr T) (ret Tensor) {
 
 func Zeros(dims ...int) Tensor {
 	shape := Shape(dims)
-	return Tensor{
+	ret := Tensor{
 		data:  make([]*V, shape.Cap()),
 		Shape: shape,
 	}
+	for i := range ret.data {
+		ret.data[i] = &V{}
+	}
+	return ret
 }
 
 func All(val float64, dims []int) Tensor {
@@ -223,7 +234,7 @@ func broadcastOp(x, y Tensor, op string) (ret Tensor) {
 		ret.Shape = h.Shape // set the shape
 		ret.data = make([]*V, len(h.data))
 		for i := range ret.data {
-			ret.data[i] = basicOp(x.data[i], y.data[i], op)
+			ret.data[i] = basicOp(x.data[i], y.data[i%len(y.data)], op)
 		}
 	} else {
 		panic("cannot add")
@@ -258,13 +269,13 @@ func (t Tensor) AddS(v float64) Tensor {
 
 func (t Tensor) MulS(v float64) Tensor {
 	for i := range t.data {
-		t.data[i].Data = t.data[i].Data / v
+		t.data[i].Data = t.data[i].Data * v
 	}
 	return t
 }
 
 func (t Tensor) DivS(v float64) Tensor {
-	return t.MulS(1 / v)
+	return t.MulS(1. / v)
 }
 
 func (t Tensor) Grad() (ret []float64) {

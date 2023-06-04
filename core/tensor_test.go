@@ -18,6 +18,10 @@ func TestBroadCastable(t *testing.T) {
 	assert.False(t, canBroadcast(a, Ones(2, 3)))
 }
 
+func TestRand(t *testing.T) {
+	Randn(3, 3).PrintData()
+}
+
 func TestTensorInit(t *testing.T) {
 	tn := NewTensor(d3{{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}})
 
@@ -84,6 +88,12 @@ func TestAdd(t *testing.T) {
 	for _, v := range c.data {
 		assert.Equal(t, v.Data, 2.0)
 	}
+
+	a = NewTensor(d2{{1, 2, 3}, {4, 5, 6}})
+	b = NewTensor(d1{1, 2, 3})
+	c = a.Add(b)
+	d = NewTensor(d2{{2, 4, 6}, {5, 7, 9}})
+	assert.True(t, c.Equal(d))
 }
 
 func TestMatMul(t *testing.T) {

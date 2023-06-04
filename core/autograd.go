@@ -283,6 +283,10 @@ func MapV(vs []*V, fn func(v *V) *V) []*V {
 	return vs
 }
 
+func Mean(vs []*V) *V {
+	return Sum(vs).Div(&V{Data: float64(len(vs))})
+}
+
 func Sum(vs []*V) *V {
 	if len(vs) == 0 {
 		return nil
