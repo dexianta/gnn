@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -86,6 +87,14 @@ func (s Shape) Iter() ShapeIter {
 type Tensor struct {
 	data  []*V
 	Shape Shape
+}
+
+func (t Tensor) GetV(pos Pos) *V {
+	if len(pos) != len(t.Shape) {
+		panic("invalid pos")
+	}
+
+	return t.data[toIndex(pos, t.Shape)]
 }
 
 func (t Tensor) Dim() int {
@@ -276,8 +285,9 @@ func (t *Tensor) Equal(o Tensor) bool {
 	}
 
 	for i := range t.data {
-		if t.data[i].Data != o.data[i].Data {
-			fmt.Printf("inequality: %v, %v\n", t.data[i].Data, o.data[i].Data)
+		dff := math.Abs(t.data[i].Data - o.data[i].Data)
+		if dff > 0.001 {
+			fmt.Printf("inequality: %v, %v, dff: %v\n", t.data[i].Data, o.data[i].Data, dff)
 			return false
 		}
 	}
