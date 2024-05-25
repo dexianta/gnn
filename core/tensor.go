@@ -89,7 +89,8 @@ type Tensor struct {
 	Shape Shape
 }
 
-func (t Tensor) GetBatchV(pos []Pos) (ret []*V) {
+// get a list of value with corresponding positions
+func (t Tensor) GetVs(pos []Pos) (ret []*V) {
 	for _, p := range pos {
 		ret = append(ret, t.data[toIndex(p, t.Shape)])
 	}

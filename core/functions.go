@@ -1,6 +1,5 @@
 package core
 
-// Softmax only applies to the -1 dimension
 func Softmax(a Tensor, dim int) (ret Tensor) {
 	if dim >= a.Dim() {
 		panic("invalid dim >= a.Dim()")
